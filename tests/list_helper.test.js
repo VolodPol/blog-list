@@ -2,6 +2,7 @@ const { test, describe } = require('node:test')
 const assert = require('node:assert')
 const listHelper = require('../utils/list_helper')
 
+const blogs = require('./mock/blogs.json')
 
 test('dummy returns one', () => {
     const blogs = []
@@ -11,8 +12,6 @@ test('dummy returns one', () => {
 })
 
 describe('verify totalLikes() function', () => {
-    const blogs = require('./mock/blogs.json')
-
     test('empty input', () => {
         assert.strictEqual(listHelper.totalLikes([]), 0)
         assert.strictEqual(listHelper.totalLikes(), 0)
@@ -28,4 +27,11 @@ describe('verify totalLikes() function', () => {
             blogs.reduce((sum, blog) => sum + blog.likes, 0)
         )
     })
+})
+
+describe('verify favoriteBlog() function', () => {
+    assert.deepStrictEqual(
+        listHelper.favoriteBlog(blogs),
+        blogs.find(b => b._id === '5a422b3a1b54a676234d17f9')
+    )
 })
