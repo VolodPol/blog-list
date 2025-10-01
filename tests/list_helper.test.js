@@ -35,3 +35,13 @@ describe('verify favoriteBlog() function', () => {
         blogs.find(b => b._id === '5a422b3a1b54a676234d17f9')
     )
 })
+
+describe('verify mostBlogs() function', () => {
+    assert.deepStrictEqual(
+        listHelper.mostLikes(blogs),
+        {
+            author: "Edsger W. Dijkstra",
+            likes: 17
+        }
+    )
+})
