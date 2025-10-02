@@ -62,6 +62,18 @@ test('verify post request', async () => {
 
 })
 
+
+test('verify no \'id\' property is handled correctly in POST request', async() => {
+    const newBlog = {
+        title: 'New blog',
+        author: 'John Doe',
+        url: 'http://www.here.ua/blog'
+    }
+    const saved = (await api.post('/api/blogs').send(newBlog)).body
+    console.log(saved)
+    assert.strictEqual(saved.likes, 0)
+})
+
 after(async () => {
     await mongoose.connection.close()
 })
