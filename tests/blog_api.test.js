@@ -74,6 +74,23 @@ test('verify no \'id\' property is handled correctly in POST request', async() =
     assert.strictEqual(saved.likes, 0)
 })
 
+test('verify POST request with missing obligatory properties', async () => {
+    await api.post('/api/blogs')
+        .send(
+            {
+                author: 'John Doe',
+                url: 'http://www.here.ua/blog'
+            }
+        ).expect(400)
+    await api.post('/api/blogs')
+        .send(
+            {
+                title: 'New blog',
+                author: 'John Doe'
+            }
+        ).expect(400)
+})
+
 after(async () => {
     await mongoose.connection.close()
 })
