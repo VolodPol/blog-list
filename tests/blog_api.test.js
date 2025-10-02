@@ -32,6 +32,11 @@ test('a specific blog is within the returned blogs', async () => {
     assert.strictEqual(titles.includes('Canonical string reduction'), true)
 })
 
+test('verify ids are present', async () => {
+    const response = await api.get('/api/blogs')
+    assert.strictEqual(response.body.every(it => it.id), true)
+})
+
 after(async () => {
     await mongoose.connection.close()
 })
