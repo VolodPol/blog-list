@@ -22,4 +22,12 @@ blogRouter.post('/', async (request, response) => {
     )
 })
 
+blogRouter.delete('/:id', async (request, response) => {
+    const id = request.params.id;
+    if (await Blog.findByIdAndDelete(id, {}))
+        return response.status(204).end()
+
+    response.status(400).json({ error: 'No blog with such id' })
+})
+
 module.exports = blogRouter

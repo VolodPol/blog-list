@@ -1,4 +1,4 @@
-const { test, after } = require('node:test')
+const { test, after, describe } = require('node:test')
 const assert = require('node:assert')
 const mongoose = require('mongoose')
 const supertest = require('supertest')
@@ -90,6 +90,24 @@ test('verify POST request with missing obligatory properties', async () => {
             }
         ).expect(400)
 })
+
+
+describe('deletion of a blog', () => {
+    test('succeeds with status code 204 if id is valid', async () => {
+        const initialBlogs = await fetchAllRecords()
+        const blogToDelete = initialBlogs[0]
+
+        await api.delete(`/api/blogs/${blogToDelete.id}`).expect(204)
+
+        const afterDeletion = await fetchAllRecords()
+
+        const titles = afterDeletion.map(b => b.title)
+        assert(!titles.includes(blogToDelete.title))
+
+        assert.strictEqual(afterDeletion.length, initialBlogs.length - 1)
+    })
+})
+
 
 after(async () => {
     await mongoose.connection.close()
