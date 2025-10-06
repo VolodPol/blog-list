@@ -1,9 +1,7 @@
-const Blog = require('../models/blog')
 
-
-const fetchAllRecords = async () => {
-    const blogs = await Blog.find({})
-    return blogs.map(it => it.toJSON())
+const fetchAllRecords = async (schema) => {
+    const records = await schema.find({})
+    return records.map(it => it.toJSON())
 }
 
 module.exports = { fetchAllRecords }

@@ -50,12 +50,12 @@ describe('verify POST requests', () => {
         }
 
         const initialSize = blogs.length
-        assert.strictEqual((await fetchAllRecords()).length, initialSize)
+        assert.strictEqual((await fetchAllRecords(Blog)).length, initialSize)
         const saveResponse = await api.post('/api/blogs')
             .send(newBlog)
             .expect(201)
             .expect('Content-Type', /application\/json/)
-        assert.strictEqual((await fetchAllRecords()).length, initialSize + 1)
+        assert.strictEqual((await fetchAllRecords(Blog)).length, initialSize + 1)
         const savedBlog = saveResponse.body
 
         assert.strictEqual(savedBlog.title, newBlog.title)
@@ -98,12 +98,12 @@ describe('verify POST requests', () => {
 
 describe('verify DELETE requests', () => {
     test('succeeds with status code 204 if id is valid', async () => {
-        const initialBlogs = await fetchAllRecords()
+        const initialBlogs = await fetchAllRecords(Blog)
         const blogToDelete = initialBlogs[0]
 
         await api.delete(`/api/blogs/${blogToDelete.id}`).expect(204)
 
-        const afterDeletion = await fetchAllRecords()
+        const afterDeletion = await fetchAllRecords(Blog)
 
         const titles = afterDeletion.map(b => b.title)
         assert(!titles.includes(blogToDelete.title))
@@ -115,10 +115,10 @@ describe('verify DELETE requests', () => {
 
 describe('verify PUT requests', () => {
     test('number of likes is updated successful', async () => {
-        const countBlogs = async () => (await fetchAllRecords()).length
+        const countBlogs = async () => (await fetchAllRecords(Blog)).length
         const initialCount = await countBlogs()
 
-        const blogToUpdate = (await fetchAllRecords())[0]
+        const blogToUpdate = (await fetchAllRecords(Blog))[0]
         blogToUpdate.likes += 10
 
         const response = await api.put(`/api/blogs/${blogToUpdate.id}`)
