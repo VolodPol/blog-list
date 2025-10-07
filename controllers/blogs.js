@@ -5,14 +5,6 @@ const User = require('../models/user')
 const { ERRORS } = require('../errors/hanlder')
 
 
-const getToken = (request) => {
-    const tokenPrefix = 'Bearer ';
-    const header = request.get('authorization')
-    if (header && header.startsWith(tokenPrefix))
-        return header.replace(tokenPrefix, '')
-    return null
-}
-
 blogRouter.get('/', async (request, response) => {
     const fetchedBlogs = await Blog.find({})
         .populate('user', { username: 1, name: 1, id: 1 })
@@ -26,7 +18,7 @@ blogRouter.post('/', async (request, response, next) => {
     if (!title || !url)
         return response.status(400).end()
 
-    const payload = jwt.verify(getToken(request), process.env.SECRET)
+    const payload = jwt.verify(request.token, process.env.SECRET)
     if (!payload.id)
         return next({ name: ERRORS.INVALID_TOKEN })
 

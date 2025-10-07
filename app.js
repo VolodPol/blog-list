@@ -6,10 +6,12 @@ const blogRouter = require("./controllers/blogs")
 const userRouter = require('./controllers/users')
 const loginRouter = require('./controllers/login')
 const { errorHandler } = require("./errors/hanlder");
+const { tokenTracker } = require("./utils/tokenTracker");
 
 
 const app = express()
 app.use(express.json())
+app.use(tokenTracker)
 app.use('/api/blogs', blogRouter)
 app.use('/api/users', userRouter)
 app.use('/api/login', loginRouter)

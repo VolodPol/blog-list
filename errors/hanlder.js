@@ -8,7 +8,14 @@ const ERRORS = Object.freeze({
 })
 
 
-
+/**
+ * Middleware for handling errors
+ * @param error
+ * @param request
+ * @param response
+ * @param next
+ * @returns {*}
+ */
 const errorHandler = (error, request, response, next) => {
     const errorName = error.name
     const { INVALID_PASSWORD, MONGO_NOT_UNIQUE, INCORRECT_CREDENTIALS, INVALID_TOKEN, MISSING_USER, JWT_ERROR } = ERRORS
