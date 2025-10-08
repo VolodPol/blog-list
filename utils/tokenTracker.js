@@ -15,7 +15,8 @@ const getToken = (request) => {
  * @param next
  */
 const tokenTracker = (request, response, next) => {
-    request.token = getToken(request)
+    if (!request.token)
+        request.token = getToken(request)
 
     next()
 }

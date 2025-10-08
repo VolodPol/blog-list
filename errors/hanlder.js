@@ -4,7 +4,8 @@ const ERRORS = Object.freeze({
     INCORRECT_CREDENTIALS: 'InvalidUsernameOrPassword',
     INVALID_TOKEN: 'InvalidToken',
     MISSING_USER: 'MissingUser',
-    JWT_ERROR: 'JsonWebTokenError'
+    JWT_ERROR: 'JsonWebTokenError',
+    ILLEGAL_DELETION: 'NotAuthorizedDeletion'
 })
 
 
@@ -18,7 +19,7 @@ const ERRORS = Object.freeze({
  */
 const errorHandler = (error, request, response, next) => {
     const errorName = error.name
-    const { INVALID_PASSWORD, MONGO_NOT_UNIQUE, INCORRECT_CREDENTIALS, INVALID_TOKEN, MISSING_USER, JWT_ERROR } = ERRORS
+    const { INVALID_PASSWORD, MONGO_NOT_UNIQUE, INCORRECT_CREDENTIALS, INVALID_TOKEN, MISSING_USER, JWT_ERROR, ILLEGAL_DELETION } = ERRORS
 
     const reply = (code, message) => {
         console.log(message)
@@ -41,6 +42,8 @@ const errorHandler = (error, request, response, next) => {
             return reply(401, 'Token invalid')
         case MISSING_USER:
             return reply(400, 'UserId missing or not valid')
+        case ILLEGAL_DELETION:
+            return reply(401, 'User can only delete its own blogs')
     }
 
     next(error)
