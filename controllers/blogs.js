@@ -1,5 +1,4 @@
 const blogRouter = require('express').Router()
-const jwt = require('jsonwebtoken')
 const Blog = require('../models/blog')
 const User = require('../models/user')
 const { ERRORS } = require('../errors/hanlder')
@@ -18,45 +17,44 @@ blogRouter.post('/', async (request, response, next) => {
     if (!title || !url)
         return response.status(400).end()
 
-    const payload = jwt.verify(request.token, process.env.SECRET)
-    if (!payload.id)
-        return next({ name: ERRORS.INVALID_TOKEN })
-
     if (!requestBody.likes)
         requestBody.likes = 0
 
-    const creator = await User.findById(payload.id)
-    if (!creator)
-        return next({ name: ERRORS.MISSING_USER })
-
-
+    const creator = request.user
     const blog = new Blog(
         {
             ...requestBody,
-            user: creator._id
+            user: creator.id
         }
     )
 
     const savedBlog = await blog.save()
-    creator.blogs = creator.blogs.concat(savedBlog._id)
-    await creator.save()
+    await User.updateOne({ _id: creator.id }, { $set: { blogs: creator.blogs.concat(savedBlog._id) } })
 
     response.status(201).json(savedBlog)
 })
 
 blogRouter.delete('/:id', async (request, response, next) => {
-    const payload = jwt.verify(request.token, process.env.SECRET)
-    if (!payload.id)
-        return next({name: ERRORS.INVALID_TOKEN})
-
     const id = request.params.id
     const foundBlog = await Blog.findById(id)
-    if (foundBlog.user.toString() !== payload.id)
+    const authorId = request.user.id
+    if (foundBlog.user.toString() !== authorId.toString())
         return next({ name: ERRORS.ILLEGAL_DELETION })
 
 
-    if (await Blog.findByIdAndDelete(id, {}))
+    const deleted = await Blog.findByIdAndDelete(id, {});
+    console.log(
+        'blogs from request user: ', request.user
+    )
+
+    if (deleted) {
+        const updatedBlogs = request.user.blogs.filter(b => b.toString() !== deleted._id.toString() );
+        await User.updateOne(
+            { _id: authorId },
+            { $set: { blogs:  updatedBlogs }}
+        )
         return response.status(204).end()
+    }
 
     response.status(400).json({ error: 'No blog to delete with such id' })
 })

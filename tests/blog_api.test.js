@@ -1,24 +1,38 @@
-const { test, after, describe } = require('node:test')
+const { test, before, after, describe } = require('node:test')
 const assert = require('node:assert')
 const mongoose = require('mongoose')
 const supertest = require('supertest')
+const jwt = require('jsonwebtoken')
 
 const app = require('../app')
 const Blog = require('../models/blog')
 const blogs = require('./mock/blogs.json')
 const {fetchAllRecords} = require("./util");
+const User = require("../models/user");
+const mockUser = require("./mock/user.json");
 const api = supertest(app)
 
 
-test.beforeEach(async () => {
-    await Blog.insertMany(blogs)
-})
+let jwtToken
 
-test.afterEach(async () => {
+
+const initDB = async () => {
+    const {_id, username} = await User.insertOne(mockUser);
+    jwtToken = `Bearer ${jwt.sign({username: username, id: _id.toString()}, process.env.SECRET || 'secret')}`
+
+    const savedBlogs = await Blog.insertMany(blogs);
+    await Blog.updateMany({}, {$set: {user: _id}})
+    await User.updateOne({}, {$set: {blogs: [...savedBlogs.map(b => b._id)]}})
+}
+
+const clear = async () => {
     await Blog.deleteMany({})
-})
+    await User.deleteMany({})
+}
 
 describe('test GET requests', () => {
+    before(async () => await initDB())
+
     test('blogs are returned correctly', async () => {
         const received = await api
             .get('/api/blogs')
@@ -38,9 +52,13 @@ describe('test GET requests', () => {
         const response = await api.get('/api/blogs')
         assert.strictEqual(response.body.every(it => it.id), true)
     })
+
+    after(async () => await clear())
 })
 
 describe('verify POST requests', () => {
+    before(async () => initDB())
+
     test('verify post request', async () => {
         const newBlog = {
             title: 'New blog',
@@ -52,6 +70,7 @@ describe('verify POST requests', () => {
         const initialSize = blogs.length
         assert.strictEqual((await fetchAllRecords(Blog)).length, initialSize)
         const saveResponse = await api.post('/api/blogs')
+            .set('Authorization', jwtToken)
             .send(newBlog)
             .expect(201)
             .expect('Content-Type', /application\/json/)
@@ -71,12 +90,13 @@ describe('verify POST requests', () => {
             author: 'John Doe',
             url: 'http://www.here.ua/blog'
         }
-        const saved = (await api.post('/api/blogs').send(newBlog)).body
+        const saved = (await api.post('/api/blogs').set('Authorization', jwtToken).send(newBlog)).body
         assert.strictEqual(saved.likes, 0)
     })
 
     test('verify POST request with missing obligatory properties', async () => {
         await api.post('/api/blogs')
+            .set('Authorization', jwtToken)
             .send(
                 {
                     author: 'John Doe',
@@ -84,6 +104,7 @@ describe('verify POST requests', () => {
                 }
             ).expect(400)
         await api.post('/api/blogs')
+            .set('Authorization', jwtToken)
             .send(
                 {
                     title: 'New blog',
@@ -91,17 +112,21 @@ describe('verify POST requests', () => {
                 }
             ).expect(400)
     })
+    after(async() => await clear())
 })
 
 
 
 
-describe('verify DELETE requests', () => {
-    test('succeeds with status code 204 if id is valid', async () => {
+describe('verify DELETE requests', async () => {
+    await before(async () => await initDB())
+
+    await test('succeeds with status code 204 if id is valid', async () => {
         const initialBlogs = await fetchAllRecords(Blog)
         const blogToDelete = initialBlogs[0]
 
-        await api.delete(`/api/blogs/${blogToDelete.id}`).expect(204)
+        await api.delete(`/api/blogs/${blogToDelete.id}`)
+            .set('Authorization', jwtToken).expect(204)
 
         const afterDeletion = await fetchAllRecords(Blog)
 
@@ -109,11 +134,16 @@ describe('verify DELETE requests', () => {
         assert(!titles.includes(blogToDelete.title))
 
         assert.strictEqual(afterDeletion.length, initialBlogs.length - 1)
+        assert.strictEqual((await User.findOne({})).blogs.length, afterDeletion.length)
     })
+
+    after(async () => await clear())
 })
 
 
 describe('verify PUT requests', () => {
+    before(async () => await initDB())
+
     test('number of likes is updated successful', async () => {
         const countBlogs = async () => (await fetchAllRecords(Blog)).length
         const initialCount = await countBlogs()
@@ -122,14 +152,16 @@ describe('verify PUT requests', () => {
         blogToUpdate.likes += 10
 
         const response = await api.put(`/api/blogs/${blogToUpdate.id}`)
+            .set('Authorization', jwtToken)
             .send(blogToUpdate)
             .expect(200)
-        const updated = response.body
+        const { likes } = response.body
 
-
-        assert.strictEqual(updated.likes, blogToUpdate.likes)
+        assert.strictEqual(likes, blogToUpdate.likes)
         assert.strictEqual(initialCount, await countBlogs())
     })
+
+    after(async () => await clear())
 })
 
 

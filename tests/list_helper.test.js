@@ -32,7 +32,7 @@ describe('verify totalLikes() function', () => {
 describe('verify favoriteBlog() function', () => {
     assert.deepStrictEqual(
         listHelper.favoriteBlog(blogs),
-        blogs.find(b => b._id === '5a422b3a1b54a676234d17f9')
+        blogs.find(b => b.title === 'Canonical string reduction')
     )
 })
 
