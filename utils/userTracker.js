@@ -19,7 +19,7 @@ const getToken = (request) => {
  * @returns {Promise<*>}
  */
 const userTracker = async (request, response, next) => {
-    if (request.method === 'GET')
+    if (request.method === 'GET' || request.url.includes('api/users') && request.method === 'POST')
         return next()
 
     const token = getToken(request)
