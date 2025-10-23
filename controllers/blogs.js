@@ -43,9 +43,6 @@ blogRouter.delete('/:id', async (request, response, next) => {
 
 
     const deleted = await Blog.findByIdAndDelete(id, {});
-    console.log(
-        'blogs from request user: ', request.user
-    )
 
     if (deleted) {
         const updatedBlogs = request.user.blogs.filter(b => b.toString() !== deleted._id.toString() );

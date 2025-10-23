@@ -12,6 +12,12 @@ const { errorHandler } = require("./errors/hanlder");
 const app = express()
 
 app.use(express.json())
+
+if (process.env.NODE_ENV === 'test') {
+    const testingRouter = require('./controllers/testing')
+    app.use('/api/reset', testingRouter)
+}
+
 app.use('/api/blogs', userTracker, blogRouter)
 app.use('/api/users', userRouter)
 app.use('/api/login', loginRouter)
