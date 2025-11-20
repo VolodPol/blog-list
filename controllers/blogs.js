@@ -1,12 +1,15 @@
 const blogRouter = require('express').Router()
 const Blog = require('../models/blog')
 const User = require('../models/user')
+const Comment = require('../models/comment')
 const { ERRORS } = require('../errors/hanlder')
 
 
 blogRouter.get('/', async (request, response) => {
     const fetchedBlogs = await Blog.find({})
         .populate('user', { username: 1, name: 1, id: 1 })
+        .populate('comments', { content: 1 })
+        .exec()
     response.json(fetchedBlogs)
 })
 
@@ -34,13 +37,33 @@ blogRouter.post('/', async (request, response, next) => {
     response.status(201).json(savedBlog)
 })
 
+blogRouter.post('/:id/comments', async (request, response, next) => {
+    const id = request.params.id
+    let requestBody = request.body
+    const {content} = requestBody
+    if (!content)
+        return response.status(400).end()
+
+    const foundBlog = await Blog.findById(id)
+    if (!foundBlog)
+        return response.status(400).end()
+
+    const comment = new Comment({
+        content,
+        blog: foundBlog.id
+    })
+    const savedComment = await comment.save()
+    await Blog.updateOne({ _id: foundBlog.id }, { $set: { comments: foundBlog.comments.concat(savedComment._id) } })
+
+    response.status(201).json(savedComment)
+})
+
 blogRouter.delete('/:id', async (request, response, next) => {
     const id = request.params.id
     const foundBlog = await Blog.findById(id)
     const authorId = request.user.id
     if (foundBlog.user.toString() !== authorId.toString())
         return next({ name: ERRORS.ILLEGAL_DELETION })
-
 
     const deleted = await Blog.findByIdAndDelete(id, {});
 
@@ -50,6 +73,7 @@ blogRouter.delete('/:id', async (request, response, next) => {
             { _id: authorId },
             { $set: { blogs:  updatedBlogs }}
         )
+        await Comment.deleteMany({ _id: { $in: deleted.comments.map(it => it._id) } })
         return response.status(204).end()
     }
 
